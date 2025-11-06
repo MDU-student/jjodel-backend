@@ -1,11 +1,13 @@
 ﻿using jjodel_persistence.Models.Dto;
 using jjodel_persistence.Models.Entity;
 using jjodel_persistence.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using System.Linq;
 
 namespace jjodel_persistence.Controllers.API {
@@ -16,16 +18,19 @@ namespace jjodel_persistence.Controllers.API {
         private readonly ILogger<ProjectController> _logger;
         private readonly ProjectService _projectService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IMemoryCache _cache; // cache
 
         public ProjectController(
             ILogger<ProjectController> logger,
             ProjectService projectService,
-            UserManager<ApplicationUser> userManager
+            UserManager<ApplicationUser> userManager,
+            IMemoryCache cache
             ) {
         
             this._logger = logger;
             this._projectService = projectService;
             this._userManager = userManager;
+            this._cache = cache;
         }
 
         [Authorize(Roles ="User")]
@@ -59,7 +64,39 @@ namespace jjodel_persistence.Controllers.API {
                 }
             }
             catch(Exception ex) {
-                _logger.LogError(ex.Message);
+                this._logger.LogError(ex.Message);
+            }
+            return BadRequest();
+
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("templates")]
+        public async Task<IActionResult> Add([FromBody] CreateProjectTemplateRequest createProjectTemplateRequest) {
+
+            try {
+                this._logger.LogInformation("Add Project Template request ");
+                if(ModelState.IsValid) {
+                    ProjectTemplate projectTemplate = new ProjectTemplate() {
+                        Id = Guid.NewGuid(),
+                        Name = createProjectTemplateRequest.Name,
+                        Description = createProjectTemplateRequest.Description,
+                        Creation = DateTime.UtcNow,
+                        LastModified = DateTime.UtcNow,
+                        State = createProjectTemplateRequest.State != null ? createProjectTemplateRequest.State : "",
+                        Version = createProjectTemplateRequest.Version,
+                        ViewpointsNumber = createProjectTemplateRequest.ViewpointsNumber,
+                        MetamodelsNumber = createProjectTemplateRequest.MetamodelsNumber,
+                        ModelsNumber = createProjectTemplateRequest.ViewpointsNumber,
+                        
+                    };
+                    if(await this._projectService.AddProjectTemplate(projectTemplate)) {
+                        return Ok(Convert(projectTemplate));
+                    }
+                }
+            }
+            catch(Exception ex) {
+                this._logger.LogError(ex.Message);
             }
             return BadRequest();
 
@@ -171,6 +208,50 @@ namespace jjodel_persistence.Controllers.API {
             return BadRequest();
         }
 
+        [Authorize(Roles = "Admin, User")]
+        [HttpGet("get-templates")]
+        public async Task<IActionResult> GetTemplates() {
+            // gets all project template.
+            try {
+                this._logger.LogInformation("Get all project templates");
+
+                List<ProjectTemplate> templates = await _cache.GetOrCreateAsync("project_template", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60);
+                    return await this._projectService.GetTemplatesAsNoTracking();
+                });
+
+                return Ok(Convert(templates));
+
+            }
+            catch(Exception ex) {
+                this._logger.LogError(ex.ToString());
+            }
+            return BadRequest();
+        }
+
+        [HttpGet("templates/{Id:guid}")]
+        [Authorize(Roles = "Admin, User")]
+        public async Task<IActionResult> GetTemplateById(Guid Id) {
+            // get project template by id.
+            try {
+                this._logger.LogInformation("Get project template by id" + Id);
+
+
+                if(Guid.Empty == Id) {
+                    return BadRequest();
+                }
+
+                ProjectTemplate template = await this._projectService.GetTemplateById(Id);
+
+                return Ok(Convert(template));
+
+            }
+            catch(Exception ex) {
+                this._logger.LogError(ex.ToString());
+            }
+            return BadRequest();
+        }
 
         [Authorize(Roles = "User")]
         [HttpPut]
@@ -235,6 +316,30 @@ namespace jjodel_persistence.Controllers.API {
         private static List<ProjectResponse> Convert(List<Project> projects) {
             List<ProjectResponse> result = new List<ProjectResponse>();
             foreach(Project project in projects) {
+                result.Add(Convert(project));
+            }
+            return result;
+        }
+
+        public static ProjectTemplateResponse Convert(ProjectTemplate p) {
+            ProjectTemplateResponse response = new ProjectTemplateResponse() {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                State = p.State,
+                Creation = p.Creation,
+                LastModified = p.LastModified,
+                Version = p.Version,
+                ViewpointsNumber = p.ViewpointsNumber,
+                MetamodelsNumber = p.MetamodelsNumber,
+                ModelsNumber = p.ModelsNumber,
+            };
+            return response;
+        }
+
+        private static List<ProjectTemplateResponse> Convert(List<ProjectTemplate> projects) {
+            List<ProjectTemplateResponse> result = new List<ProjectTemplateResponse>();
+            foreach(ProjectTemplate project in projects) {
                 result.Add(Convert(project));
             }
             return result;

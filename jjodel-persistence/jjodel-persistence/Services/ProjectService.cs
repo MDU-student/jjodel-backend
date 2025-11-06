@@ -28,6 +28,40 @@ namespace jjodel_persistence.Services {
             }
         }
 
+        public async Task<bool> AddProjectTemplate(ProjectTemplate m) {
+            try {
+                await this._applicationDbContext.ProjectTemplates.AddAsync(m);
+                return await this.Save();
+            }
+            catch(Exception ex) {
+                this._logger.LogError(ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> Delete(Guid Id) {
+            try {
+                Project m = await this.GetById(Id);
+                this._applicationDbContext.Projects.Remove(m);
+                return await this.Save();
+            }
+            catch(Exception ex) {
+                this._logger.LogError(ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> Delete(Project m) {
+            try {
+                this._applicationDbContext.Projects.Remove(m);
+                return await this.Save();
+            }
+            catch(Exception ex) {
+                this._logger.LogError(ex.Message);
+                return false;
+            }
+        }
+
         public async Task<List<Project>> GetByAuthorId(Guid AuthorId) {
             return await this._applicationDbContext.
                 Projects.
@@ -91,27 +125,17 @@ namespace jjodel_persistence.Services {
                 ToListAsync();
         }
 
-        public async Task<bool> Delete(Guid Id) {
-            try {
-                Project m = await this.GetById(Id);
-                this._applicationDbContext.Projects.Remove(m);
-                return await this.Save();
-            }
-            catch(Exception ex) {
-                this._logger.LogError(ex.Message);
-                return false;
-            }
+        public async Task<List<ProjectTemplate>> GetTemplatesAsNoTracking() {
+            return await this._applicationDbContext.
+                ProjectTemplates.
+                AsNoTracking().
+                ToListAsync();
         }
 
-        public async Task<bool> Delete(Project m) {
-            try {
-                this._applicationDbContext.Projects.Remove(m);
-                return await this.Save();
-            }
-            catch(Exception ex) {
-                this._logger.LogError(ex.Message);
-                return false;
-            }
+        public async Task<ProjectTemplate> GetTemplateById(Guid Id) {
+            return await this._applicationDbContext
+                .ProjectTemplates
+                .FirstOrDefaultAsync(p => p.Id == Id);
         }
 
         public async Task<bool> Save() {

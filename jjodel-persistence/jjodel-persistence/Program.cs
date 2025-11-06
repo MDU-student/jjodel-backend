@@ -140,7 +140,7 @@ else {
     app.UseHsts();
 
 }
-
+app.UseResponseCaching(); // enable response caching middleware.
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

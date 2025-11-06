@@ -6,6 +6,7 @@
     <caption>All Users</caption>
     <thead>
         <tr>
+            <th>Enabled</th>
             <th>Nickname</th>
             <th>Name</th>
             <th>Surname</th>
@@ -13,7 +14,6 @@
             <th>Country</th>
             <th>Registration Date</th>
             <th>Last Login</th>
-            <th>Phone Number</th>
             <th>Affiliation</th>
             <th>Created Projects</th>
             <th>Collaborate to</th>
@@ -32,12 +32,25 @@
                 }
                 @{
                     string enableNewsLetter = "newsletter enabled";
-                    if (user.NewsletterEnabled != true)
-                    {
+                    if (user.NewsletterEnabled != true) {
                         enableNewsLetter = "newsletter disabled";
                     }
                 }
-                <td title="@enableNewsLetter" style="border-left: solid 3px @color;">@user.UserName</td>
+                @if (user.EmailConfirmed){
+                    <td title="User Enabled" style="border-left: solid 3px @color;" data-sort="1">
+
+                        <i class="bi bi-check-lg" style="color: green;" ></i>
+                    </td>
+                }
+                else{
+                    <td title="User not Enabled" style="border-left: solid 3px @color;" data-sort="2">
+
+                        <i class="bi bi-x" style="color: red;"></i>
+                    </td>
+                }
+
+                    
+                <td>@user.UserName</td>
                 <td>@user.Name</td>
                 <td>@user.Surname</td>
                 <td>@user.Email</td>
@@ -55,7 +68,6 @@
 
                 <td>@RegistrationDate?.ToString()</td>
                 <td>@LastLogin?.ToString()</td>
-                <td>@user.PhoneNumber</td>
                 <td>@user.Affiliation</td>
                 <td>@user.Author?.Count</td>
                 <td>@user.Collaborators?.Count</td>
@@ -65,7 +77,7 @@
                         
                         @if (!user.EmailConfirmed){
                             <button class="btn btn-warning " onclick="EnableUserConfirm('@user.Id')" title="Enable User">
-                                <i class="bi bi-check-lg"></i>
+                                <i class="bi bi-check-lg "></i>
                             </button>
                         }
                         else {
@@ -74,12 +86,10 @@
                             </button>
                             <button class="btn btn-warning " onclick="ResetPasswordConfirm('@user.Id')" title="Reset Password">
                                 <i class="bi bi-unlock"></i>
-                            </button>
-                            
+                            </button>                    
                             <button class="btn btn-danger " onclick="DeleteUserConfirm('@user.Id')" title="Delete User">
                                 <i class="bi bi-trash"></i>
                             </button>
-
                         }
                         
                     </div>
@@ -90,6 +100,7 @@
 
     <tfoot>
         <tr>
+            <th>Enabled</th>
             <th>Nickname</th>
             <th>Name</th>
             <th>Surname</th>
@@ -97,7 +108,6 @@
             <th>Country</th>
             <th>Registration Date</th>
             <th>Last Login</th>
-            <th>Phone Number</th>
             <th>Affiliation</th>
             <th>Created Projects</th>
             <th>Collaborate to</th>
