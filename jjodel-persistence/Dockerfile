@@ -1,17 +1,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
+WORKDIR /jjodel-backend-app
 
-COPY ["jjodel-persistence/jjodel-persistence.csproj", "jjodel-persistence/"]
-RUN dotnet restore "jjodel-persistence/jjodel-persistence.csproj"
+# Copy everything
+COPY . ./
+# Restore as distinct layers
+RUN dotnet restore
+# Build and publish a release
+RUN dotnet publish -o out -c Debug
 
-COPY . .
-WORKDIR /src/jjodel-persistence
-RUN dotnet publish "jjodel-persistence.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
-WORKDIR /app
-EXPOSE 80
-EXPOSE 443
-
-COPY --from=build /app/publish .
+# Build runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+WORKDIR /jjodel-backend-app
+COPY --from=build /jjodel-backend-app/out .
 ENTRYPOINT ["dotnet", "jjodel-persistence.dll"]

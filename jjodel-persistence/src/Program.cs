@@ -28,7 +28,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
                );
 
 
-builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options => {
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+{
     options.SignIn.RequireConfirmedAccount =
         builder.Configuration.GetValue<bool>("Identity:RequireConfirmedAccount");
     options.Password.RequiredLength =
@@ -48,18 +49,22 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options => {
 
 
 builder.Services.AddAuthentication(
-    options => {
+    options =>
+    {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
-    .AddCookie(options => {
+    .AddCookie(options =>
+    {
         options.LogoutPath = "/Account/Logout";
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/Login";
-        
+
     })
-     .AddJwtBearer(options => {
-         options.TokenValidationParameters = new TokenValidationParameters {
+     .AddJwtBearer(options =>
+     {
+         options.TokenValidationParameters = new TokenValidationParameters
+         {
              ValidateIssuer = true,
              ValidateAudience = true,
              ValidateLifetime = true,
@@ -83,8 +88,9 @@ builder.Services.AddScoped<ClientLogService>();
 builder.Services.AddControllersWithViews(); // add api and MVC
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options => {
-    
+builder.Services.AddSwaggerGen(options =>
+{
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
     {
         Name = "Authorization",
@@ -111,7 +117,8 @@ builder.Services.AddSwaggerGen(options => {
 
 
 //logger.
-builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => {
+builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) =>
+{
     loggerConfiguration
         .ReadFrom.Configuration(hostingContext.Configuration);
 }, writeToProviders: true);
@@ -119,7 +126,8 @@ builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => {
 builder.Services.
     AddFluentEmail(builder.Configuration.GetValue<string>("MailSettings:FromDefault"))
    .AddRazorRenderer()
-   .AddMailKitSender(new FluentEmail.MailKitSmtp.SmtpClientOptions() {
+   .AddMailKitSender(new FluentEmail.MailKitSmtp.SmtpClientOptions()
+   {
        Server = builder.Configuration.GetValue<string>("MailSettings:Server"),
        Password = builder.Configuration.GetValue<string>("MailSettings:Password"),
        User = builder.Configuration.GetValue<string>("MailSettings:Username"),
@@ -131,11 +139,13 @@ builder.Services.
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if(app.Environment.IsDevelopment()) {
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else {
+else
+{
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 
@@ -160,10 +170,9 @@ app.MapControllers();
 
 app.UseSerilogRequestLogging();
 
-#if DEBUG
-
 // scope needed to initialize db at app startup.
-using(var scope = app.Services.CreateScope()) {
+using (var scope = app.Services.CreateScope())
+{
     var services = scope.ServiceProvider;
 
     ApplicationDbContext applicationDbContext = services.GetService<ApplicationDbContext>();
@@ -177,6 +186,5 @@ using(var scope = app.Services.CreateScope()) {
     db.Initialize();
 
 }
-#endif
 
 app.Run();
